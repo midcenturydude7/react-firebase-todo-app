@@ -11,6 +11,8 @@ import {
   onSnapshot,
   updateDoc,
   doc,
+  addDoc,
+  deleteDoc,
 } from "firebase/firestore";
 
 const style = {
@@ -25,8 +27,22 @@ const style = {
 
 function App() {
   const [todos, setTodos] = React.useState([]);
+  const [input, setInput] = React.useState("");
 
   // Create todo
+  const createTodo = async (e) => {
+    e.preventDefault(e);
+    if (input === "") {
+      alert("Please a valid todo");
+      return;
+    }
+    await addDoc(collection(db, "todos"), {
+      text: input,
+      completed: false,
+    });
+    setInput("");
+  };
+
   // Read todo from Firebase
   React.useEffect(() => {
     const q = query(collection(db, "todos"));
@@ -46,14 +62,20 @@ function App() {
       completed: !todo.completed,
     });
   };
+
   // Delete todo
+  const deleteTodo = async (id) => {
+    await deleteDoc(doc(db, "todos", id));
+  };
 
   return (
     <div className={style.bg}>
       <div className={style.container}>
         <h3 className={style.heading}>Todo App</h3>
-        <form className={style.form}>
+        <form onSubmit={createTodo} className={style.form}>
           <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
             className={style.input}
             type="text"
             placeholder="Add Todo..."
@@ -64,10 +86,17 @@ function App() {
         </form>
         <ul>
           {todos.map((todo, index) => (
-            <Todo key={index} todo={todo} toggleComplete={toggleComplete} />
+            <Todo
+              key={index}
+              todo={todo}
+              toggleComplete={toggleComplete}
+              deleteTodo={deleteTodo}
+            />
           ))}
         </ul>
-        <p className={style.count}>You have {todos.length} todos</p>
+        {todos.length < 1 ? null : (
+          <p className={style.count}>{`You have ${todos.length} todos`}</p>
+        )}
       </div>
     </div>
   );
